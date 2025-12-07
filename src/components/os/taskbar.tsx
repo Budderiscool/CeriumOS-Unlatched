@@ -3,7 +3,8 @@
 
 import { LayoutGrid } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { AppDef } from '@/lib/types';
+import type { AppDef } from '@/lib/types';
+import { apps as appDefs } from '@/lib/apps';
 import Clock from './clock';
 import QuickSettings from './quick-settings';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -38,7 +39,12 @@ export default function Taskbar({ openApps, activeInstanceId, onAppIconClick, on
           </Tooltip>
 
           <div className="flex items-center gap-2">
-            {openApps.filter(a => !a.app.isSystemApp).map((instance) => (
+            {openApps.filter(a => !a.app.isSystemApp).map((instance) => {
+              const appDef = appDefs.find(a => a.id === instance.app.id);
+              if (!appDef) return null;
+              const Icon = appDef.icon;
+
+              return (
                <Tooltip key={instance.instanceId}>
                 <TooltipTrigger asChild>
                   <Button
@@ -49,7 +55,7 @@ export default function Taskbar({ openApps, activeInstanceId, onAppIconClick, on
                     }`}
                     onClick={() => onAppIconClick(instance.instanceId)}
                   >
-                    <instance.app.icon className="h-6 w-6" />
+                    <Icon className="h-6 w-6" />
                     {instance.instanceId === activeInstanceId && !instance.isMinimized && (
                        <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-1 bg-primary rounded-t-full"></span>
                     )}
@@ -62,7 +68,8 @@ export default function Taskbar({ openApps, activeInstanceId, onAppIconClick, on
                   <p>{instance.app.name}</p>
                 </TooltipContent>
               </Tooltip>
-            ))}
+              )
+            })}
           </div>
         </div>
         <div className="flex items-center gap-4">
