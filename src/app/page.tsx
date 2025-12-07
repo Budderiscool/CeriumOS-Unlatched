@@ -1,6 +1,8 @@
+
 "use client";
 
 import React, { useState, useCallback, useRef } from 'react';
+import Image from 'next/image';
 import { apps } from '@/lib/apps';
 import type { AppDef } from '@/lib/types';
 import Taskbar from '@/components/os/taskbar';
@@ -90,25 +92,37 @@ export default function DesktopPage() {
   return (
     <main className="h-screen w-screen overflow-hidden bg-background font-sans flex flex-col">
       <div className="flex-grow relative">
-        <div className="absolute inset-0 p-4 grid grid-cols-[repeat(auto-fill,minmax(90px,1fr))] auto-rows-min gap-4">
+        <Image
+          src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=2070"
+          alt="Lively background"
+          layout="fill"
+          objectFit="cover"
+          quality={80}
+          className="absolute inset-0 z-0 opacity-70"
+          data-ai-hint="landscape"
+        />
+
+        <div className="absolute inset-0 p-4 grid grid-cols-[repeat(auto-fill,minmax(90px,1fr))] auto-rows-min gap-4 z-10">
           {apps.map(app => (
             <DesktopIcon key={app.id} app={app} onOpen={openApp} />
           ))}
         </div>
 
-        {openApps.map(instance => 
-          !instance.isMinimized && (
-            <Window
-              key={instance.instanceId}
-              appInstance={instance}
-              isActive={instance.instanceId === activeInstanceId}
-              onClose={closeApp}
-              onFocus={focusApp}
-              onMinimize={toggleMinimize}
-              onPositionChange={updatePosition}
-            />
-          )
-        )}
+        <div className="relative z-20">
+          {openApps.map(instance => 
+            !instance.isMinimized && (
+              <Window
+                key={instance.instanceId}
+                appInstance={instance}
+                isActive={instance.instanceId === activeInstanceId}
+                onClose={closeApp}
+                onFocus={focusApp}
+                onMinimize={toggleMinimize}
+                onPositionChange={updatePosition}
+              />
+            )
+          )}
+        </div>
       </div>
       <Taskbar 
         openApps={openApps} 

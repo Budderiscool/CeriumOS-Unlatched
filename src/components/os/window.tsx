@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useRef, useState, useEffect } from 'react';
@@ -89,7 +90,7 @@ export default function Window({ appInstance, isActive, onClose, onFocus, onMini
             isLauncher 
                 ? "w-full h-full p-0" 
                 : "min-w-[300px] min-h-[200px] w-[800px] h-[600px] max-w-[95vw] max-h-[85vh]",
-            "transition-all duration-200 ease-in-out"
+            "transition-all duration-150 ease-in-out"
         )}
         style={{ zIndex: isLauncher ? 1000 : zIndex }}
         onClick={() => onFocus(instanceId)}
