@@ -4,7 +4,7 @@
 import React, { useState } from 'react';
 import { useFileSystem } from '@/lib/filesystem';
 import type { FileNode } from '@/lib/types';
-import { Folder, FileText, ArrowLeft, RefreshCw, Home, FolderPlus, FilePlus } from 'lucide-react';
+import { Folder, FileText, ArrowLeft, RefreshCw, Home, FolderPlus, FilePlus, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -20,6 +20,11 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 
+const iconMap: { [key: string]: React.ComponentType<{ className?: string }> } = {
+  Folder: Folder,
+  FileText: FileText,
+  Image: ImageIcon,
+};
 
 export default function FileManager() {
   const { readFile, createFile, createFolder } = useFileSystem();
@@ -55,8 +60,11 @@ export default function FileManager() {
 
 
   const renderIcon = (node: FileNode) => {
-    const Icon = node.icon || FileText;
-    return <Icon className="w-8 h-8 text-primary" />;
+    // The icon from localStorage is just an object, not a component.
+    // We need to look up the component from our map.
+    // @ts-ignore
+    const IconComponent = node.icon?.displayName ? iconMap[node.icon.displayName] : FileText;
+    return <IconComponent className="w-8 h-8 text-primary" />;
   };
 
   return (
@@ -117,5 +125,3 @@ export default function FileManager() {
     </div>
   );
 }
-
-    

@@ -3,7 +3,13 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { FileNode } from './types';
-import { Folder, FileText, Image } from 'lucide-react';
+import { Folder, FileText, Image as ImageIcon } from 'lucide-react';
+
+// We need to give the icons a displayName so we can look them up later.
+Folder.displayName = 'Folder';
+FileText.displayName = 'FileText';
+ImageIcon.displayName = 'Image';
+
 
 const defaultFiles: FileNode = {
   name: 'root',
@@ -20,7 +26,7 @@ const defaultFiles: FileNode = {
       name: 'Pictures', 
       icon: Folder,
       children: [
-         { name: 'photo.jpg', icon: Image },
+         { name: 'photo.jpg', icon: ImageIcon },
       ]
     },
     { name: 'README.md', icon: FileText, content: '# Welcome to CeriumOS!' },
@@ -157,5 +163,3 @@ export const useFileSystem = () => {
   }
   return context;
 };
-
-    
