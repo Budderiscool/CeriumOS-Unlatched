@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState, useRef, KeyboardEvent } from "react";
+import React, { useEffect, useState, useRef, KeyboardEvent } from "react";
 import { apps } from "@/lib/apps";
 import { cn } from "@/lib/utils";
 import type { AppDef } from "@/lib/types";
@@ -214,7 +214,7 @@ export default function TerminalApp({ openApp }: TerminalAppProps) {
                  if (React.isValidElement(line) && typeof line.props.children === 'string' && line.props.children.includes('<br />')) {
                     return <StaticLine key={index}><span dangerouslySetInnerHTML={{ __html: line.props.children }} /></StaticLine>;
                 }
-                return React.isValidElement(line) ? React.cloneElement(line, { key: index }) : null;
+                return React.isValidElement(line) ? React.cloneElement(line as React.ReactElement, { key: index }) : null;
             })}
             <Prompt onSubmit={handleCommand} />
             <div ref={endOfHistoryRef} />
