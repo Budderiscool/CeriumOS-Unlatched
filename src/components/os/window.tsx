@@ -8,6 +8,7 @@ import { X, Minus, Square } from 'lucide-react';
 import { AppDef } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import AppLauncher from './app-launcher';
+import { apps as appDefs } from '@/lib/apps';
 
 interface AppInstance {
   app: AppDef;
@@ -28,6 +29,11 @@ interface WindowProps {
 export default function Window({ appInstance, isActive, onClose, onFocus, onMinimize, onPositionChange }: WindowProps) {
   const { app, instanceId, zIndex, position } = appInstance;
   const isLauncher = app.id === 'launcher';
+
+  // Find the original app definition to get the component, not from the persisted state
+  const originalAppDef = appDefs.find(a => a.id === app.id);
+  const Icon = originalAppDef ? originalAppDef.icon : () => null;
+  const AppContent = originalAppDef ? originalAppDef.component : () => null;
 
   const nodeRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
@@ -72,8 +78,6 @@ export default function Window({ appInstance, isActive, onClose, onFocus, onMini
     onPositionChange(instanceId, { x: newX, y: newY });
   };
 
-  const AppContent = app.component;
-
   return (
     <div
         ref={nodeRef}
@@ -104,7 +108,7 @@ export default function Window({ appInstance, isActive, onClose, onFocus, onMini
                     )}
                 >
                     <div className="flex items-center gap-2">
-                        <app.icon className="h-4 w-4" />
+                        <Icon className="h-4 w-4" />
                         <span className="text-sm font-medium">{app.name}</span>
                     </div>
                     <div className="flex items-center gap-1 window-controls">
