@@ -110,9 +110,7 @@ export default function DesktopIcon({ app, onOpen, position, onPositionChange }:
       className="flex flex-col items-center justify-center gap-1 w-[90px] h-[90px] rounded-lg hover:bg-primary/10 focus:bg-primary/20 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-colors duration-150 cursor-grab active:cursor-grabbing"
     >
       <app.icon className="w-10 h-10 text-primary pointer-events-none" />
-      <span className="text-foreground text-xs text-center truncate w-full pointer-events-none select-none">{app.name}</span>
+      <span className="text-white text-xs text-center truncate w-full pointer-events-none select-none [text-shadow:0_1px_2px_rgba(0,0,0,0.5)]">{app.name}</span>
     </button>
   );
 }
-
-    

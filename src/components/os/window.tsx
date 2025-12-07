@@ -62,8 +62,17 @@ export default function Window({ appInstance, isActive, onClose, onFocus, onMini
     e.preventDefault();
 
     if (nodeRef.current) {
-        const newX = e.clientX - dragStartPosRef.current.x;
-        const newY = e.clientY - dragStartPosRef.current.y;
+        const desktop = document.getElementById('desktop');
+        if (!desktop) return;
+
+        const bounds = desktop.getBoundingClientRect();
+        let newX = e.clientX - dragStartPosRef.current.x;
+        let newY = e.clientY - dragStartPosRef.current.y;
+
+        const headerHeight = headerRef.current?.offsetHeight || 40;
+        newX = Math.max(0, Math.min(newX, bounds.width - nodeRef.current.offsetWidth));
+        newY = Math.max(0, Math.min(newY, bounds.height - headerHeight));
+        
         nodeRef.current.style.transform = `translate(${newX}px, ${newY}px)`;
     }
   };
@@ -74,8 +83,19 @@ export default function Window({ appInstance, isActive, onClose, onFocus, onMini
     document.removeEventListener('mousemove', handleMouseMove);
     document.removeEventListener('mouseup', handleMouseUp);
 
-    const newX = e.clientX - dragStartPosRef.current.x;
-    const newY = e.clientY - dragStartPosRef.current.y;
+    const desktop = document.getElementById('desktop');
+    if (!desktop) return;
+
+    const bounds = desktop.getBoundingClientRect();
+    let newX = e.clientX - dragStartPosRef.current.x;
+    let newY = e.clientY - dragStartPosRef.current.y;
+    
+    if (nodeRef.current) {
+      const headerHeight = headerRef.current?.offsetHeight || 40;
+      newX = Math.max(0, Math.min(newX, bounds.width - nodeRef.current.offsetWidth));
+      newY = Math.max(0, Math.min(newY, bounds.height - headerHeight));
+    }
+
     onPositionChange(instanceId, { x: newX, y: newY });
   };
 
@@ -130,5 +150,3 @@ export default function Window({ appInstance, isActive, onClose, onFocus, onMini
     </div>
   );
 }
-
-    

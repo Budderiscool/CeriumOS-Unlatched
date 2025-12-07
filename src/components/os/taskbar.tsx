@@ -25,7 +25,7 @@ interface TaskbarProps {
 export default function Taskbar({ openApps, activeInstanceId, onAppIconClick, onAppLauncherClick }: TaskbarProps) {
   return (
     <TooltipProvider delayDuration={0}>
-      <footer className="w-full h-14 bg-secondary/50 backdrop-blur-lg border-t border-border/50 flex items-center justify-between px-2 z-50 shrink-0">
+      <footer className="w-full h-14 bg-background/70 backdrop-blur-xl border-t border-white/10 flex items-center justify-between px-2 z-50 shrink-0">
         <div className="flex items-center gap-2">
           <Tooltip>
             <TooltipTrigger asChild>
