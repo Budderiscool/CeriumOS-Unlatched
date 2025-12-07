@@ -3,6 +3,7 @@
 
 import { useEffect, useState, useRef, KeyboardEvent } from "react";
 import { apps } from "@/lib/apps";
+import { cn } from "@/lib/utils";
 
 const StaticLine = ({ children, className }: { children: React.ReactNode, className?: string }) => (
     <p className={cn("text-green-400", className)}>{children}</p>
