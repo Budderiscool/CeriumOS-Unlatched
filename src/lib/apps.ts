@@ -1,11 +1,14 @@
 
 import type { AppDef } from './types';
-import { Globe, Terminal, Settings, LayoutGrid, Calculator } from 'lucide-react';
+import { Globe, Terminal, Settings, LayoutGrid, Calculator, Folder, FileText } from 'lucide-react';
 import Browser from '@/components/apps/browser';
 import TerminalApp from '@/components/apps/terminal';
 import SettingsApp from '@/components/apps/settings';
 import CalculatorApp from '@/components/apps/calculator';
 import AppLauncher from '@/components/os/app-launcher';
+import FileManager from '@/components/apps/file-manager';
+import Notepad from '@/components/apps/notepad';
+
 
 export const apps: AppDef[] = [
   {
@@ -13,6 +16,7 @@ export const apps: AppDef[] = [
     name: 'Browser',
     icon: Globe,
     component: Browser,
+    singleInstance: true,
   },
   {
     id: 'terminal',
@@ -25,6 +29,7 @@ export const apps: AppDef[] = [
     name: 'Settings',
     icon: Settings,
     component: SettingsApp,
+    singleInstance: true,
   },
   {
     id: 'calculator',
@@ -33,10 +38,26 @@ export const apps: AppDef[] = [
     component: CalculatorApp,
   },
   {
+    id: 'files',
+    name: 'File Explorer',
+    icon: Folder,
+    component: FileManager,
+    singleInstance: true,
+  },
+  {
+    id: 'notepad',
+    name: 'Notepad',
+    icon: FileText,
+    component: Notepad,
+  },
+  {
     id: 'launcher',
     name: 'App Launcher',
     icon: LayoutGrid,
     component: AppLauncher,
     isSystemApp: true,
+    singleInstance: true,
   },
 ];
+
+    

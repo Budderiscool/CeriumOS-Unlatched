@@ -8,6 +8,7 @@ import type { AppDef } from '@/lib/types';
 import Taskbar from '@/components/os/taskbar';
 import DesktopIcon from '@/components/os/desktop-icon';
 import Window from '@/components/os/window';
+import { FileSystemProvider } from '@/lib/filesystem';
 
 interface AppInstance {
   app: AppDef;
@@ -17,36 +18,51 @@ interface AppInstance {
   isMinimized: boolean;
 }
 
+interface IconPosition {
+  [key: string]: { x: number; y: number };
+}
+
 const usePersistentState = <T,>(key: string, defaultValue: T): [T, React.Dispatch<React.SetStateAction<T>>] => {
-  const [state, setState] = useState<T>(() => {
-    try {
-      const storedValue = window.localStorage.getItem(key);
-      return storedValue ? JSON.parse(storedValue) : defaultValue;
-    } catch (error) {
-      console.error(`Error reading localStorage key "${key}":`, error);
-      return defaultValue;
-    }
-  });
+  const [state, setState] = useState<T>(defaultValue);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
     try {
-      window.localStorage.setItem(key, JSON.stringify(state));
+      const storedValue = window.localStorage.getItem(key);
+      if (storedValue) {
+        setState(JSON.parse(storedValue));
+      }
     } catch (error) {
-      console.error(`Error setting localStorage key "${key}":`, error);
+      console.error(`Error reading localStorage key "${key}":`, error);
     }
-  }, [key, state]);
+    setIsInitialized(true);
+  }, [key]);
+
+  useEffect(() => {
+    if (isInitialized) {
+      try {
+        window.localStorage.setItem(key, JSON.stringify(state));
+      } catch (error) {
+        console.error(`Error setting localStorage key "${key}":`, error);
+      }
+    }
+  }, [key, state, isInitialized]);
 
   return [state, setState];
 };
 
-
 export default function DesktopPage() {
   const [openApps, setOpenApps] = usePersistentState<AppInstance[]>('openApps', []);
   const [activeInstanceId, setActiveInstanceId] = usePersistentState<number | null>('activeInstanceId', null);
+  const [iconPositions, setIconPositions] = usePersistentState<IconPosition>('iconPositions', {});
+  
+  const [isClient, setIsClient] = useState(false);
+
   const nextInstanceId = useRef(0);
   const nextZIndex = useRef(10);
 
   useEffect(() => {
+    setIsClient(true);
     try {
       const savedNextInstanceId = window.localStorage.getItem('nextInstanceId');
       const savedNextZIndex = window.localStorage.getItem('nextZIndex');
@@ -58,23 +74,21 @@ export default function DesktopPage() {
   }, []);
 
   useEffect(() => {
-    try {
-        window.localStorage.setItem('nextInstanceId', JSON.stringify(nextInstanceId.current));
-        window.localStorage.setItem('nextZIndex', JSON.stringify(nextZIndex.current));
-    } catch (error) {
-        console.error('Error saving refs to localStorage:', error);
-    }
-  }, [openApps]);
-
-
-  const openApp = useCallback((app: AppDef) => {
-    // Prevent re-opening launcher if it's already there
-    if (app.id === 'launcher' && openApps.some(a => a.app.id === 'launcher')) {
-      const launcherInstance = openApps.find(a => a.app.id === 'launcher');
-      if (launcherInstance) {
-        focusApp(launcherInstance.instanceId);
+    if (isClient) {
+      try {
+          window.localStorage.setItem('nextInstanceId', JSON.stringify(nextInstanceId.current));
+          window.localStorage.setItem('nextZIndex', JSON.stringify(nextZIndex.current));
+      } catch (error) {
+          console.error('Error saving refs to localStorage:', error);
       }
-      return;
+    }
+  }, [openApps, isClient]);
+
+  const openApp = useCallback((app: AppDef, input?: any) => {
+    const existingInstance = openApps.find(a => a.app.id === app.id);
+    if (app.singleInstance && existingInstance) {
+        focusApp(existingInstance.instanceId);
+        return;
     }
 
     const newInstanceId = nextInstanceId.current++;
@@ -111,8 +125,11 @@ export default function DesktopPage() {
   }, [activeInstanceId, openApps, setOpenApps, setActiveInstanceId]);
 
   const focusApp = useCallback((instanceId: number) => {
-    if (activeInstanceId === instanceId && openApps.find(a => a.instanceId === instanceId)?.isMinimized === false) return;
+    const targetApp = openApps.find(a => a.instanceId === instanceId);
+    if (!targetApp) return;
 
+    if (activeInstanceId === instanceId && !targetApp.isMinimized) return;
+    
     const newZIndex = nextZIndex.current++;
     setOpenApps(prev =>
       prev.map(a =>
@@ -124,29 +141,29 @@ export default function DesktopPage() {
 
   const toggleMinimize = useCallback((instanceId: number) => {
     let becomingActiveId: number | null = null;
-    setOpenApps(prev => prev.map(a => {
-      if (a.instanceId === instanceId) {
-        const isNowMinimized = !a.isMinimized;
-        if (isNowMinimized && activeInstanceId === instanceId) {
-             const otherApps = prev.filter(app => app.instanceId !== instanceId && !app.isMinimized);
-             if (otherApps.length > 0) {
-                 becomingActiveId = otherApps.sort((b,c) => c.zIndex - b.zIndex)[0].instanceId;
-             } else {
-                 becomingActiveId = null;
-             }
-        } else if (!isNowMinimized) {
-            focusApp(instanceId);
+    const targetApp = openApps.find(a => a.instanceId === instanceId);
+    
+    if (!targetApp) return;
+
+    const isNowMinimized = !targetApp.isMinimized;
+
+    if (isNowMinimized && activeInstanceId === instanceId) {
+        const otherApps = openApps.filter(app => app.instanceId !== instanceId && !app.isMinimized);
+        if (otherApps.length > 0) {
+            becomingActiveId = otherApps.sort((b,c) => c.zIndex - b.zIndex)[0].instanceId;
+        } else {
+            becomingActiveId = null;
         }
-        return { ...a, isMinimized: isNowMinimized };
-      }
-      return a;
-    }));
-    if (becomingActiveId !== null) {
-      setActiveInstanceId(becomingActiveId);
-    } else if (activeInstanceId === instanceId) {
-      setActiveInstanceId(null);
+        setActiveInstanceId(becomingActiveId);
+    } else if (!isNowMinimized) {
+        focusApp(instanceId);
     }
-  }, [activeInstanceId, focusApp, setOpenApps, setActiveInstanceId]);
+
+    setOpenApps(prev => prev.map(a => 
+      a.instanceId === instanceId ? { ...a, isMinimized: isNowMinimized } : a
+    ));
+
+  }, [activeInstanceId, openApps, setOpenApps, focusApp, setActiveInstanceId]);
 
   const updatePosition = useCallback((instanceId: number, newPosition: { x: number; y: number }) => {
     setOpenApps(prev =>
@@ -156,48 +173,64 @@ export default function DesktopPage() {
     );
   }, [setOpenApps]);
 
+  const updateIconPosition = useCallback((appId: string, newPosition: { x: number; y: number }) => {
+      setIconPositions(prev => ({...prev, [appId]: newPosition}));
+  }, [setIconPositions]);
+
+
   return (
-    <main className="h-screen w-screen overflow-hidden bg-background font-sans flex flex-col">
-      <div className="flex-grow relative">
-        <Image
-          src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=2070"
-          alt="Lively background"
-          fill={true}
-          objectFit="cover"
-          quality={80}
-          className="absolute inset-0 z-0 opacity-70"
-          data-ai-hint="landscape"
-          priority
-        />
+    <FileSystemProvider>
+      <main className="h-screen w-screen overflow-hidden bg-background font-sans flex flex-col">
+        <div className="flex-grow relative" id="desktop">
+          <Image
+            src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=2070"
+            alt="Lively background"
+            fill={true}
+            objectFit="cover"
+            quality={80}
+            className="absolute inset-0 z-0 opacity-70"
+            data-ai-hint="landscape"
+            priority
+          />
 
-        <div className="absolute inset-0 p-4 grid grid-cols-[repeat(auto-fill,minmax(90px,1fr))] auto-rows-min gap-4 z-10">
-          {apps.map(app => (
-            <DesktopIcon key={app.id} app={app} onOpen={openApp} />
-          ))}
-        </div>
-
-        <div className="relative z-20">
-          {openApps.map(instance => 
-            !instance.isMinimized && (
-              <Window
-                key={instance.instanceId}
-                appInstance={instance}
-                isActive={instance.instanceId === activeInstanceId}
-                onClose={closeApp}
-                onFocus={focusApp}
-                onMinimize={toggleMinimize}
-                onPositionChange={updatePosition}
+          <div className="absolute inset-0 z-10">
+            {isClient && apps.map((app, index) => (
+              <DesktopIcon 
+                key={app.id} 
+                app={app} 
+                onOpen={openApp} 
+                position={iconPositions[app.id] || { x: 16, y: 16 + index * 100 }}
+                onPositionChange={updateIconPosition}
               />
-            )
-          )}
+            ))}
+          </div>
+
+          <div className="relative z-20">
+            {isClient && openApps.map(instance => 
+              !instance.isMinimized && (
+                <Window
+                  key={instance.instanceId}
+                  appInstance={instance}
+                  isActive={instance.instanceId === activeInstanceId}
+                  onClose={closeApp}
+                  onFocus={focusApp}
+                  onMinimize={toggleMinimize}
+                  onPositionChange={updatePosition}
+                  openApp={openApp}
+                />
+              )
+            )}
+          </div>
         </div>
-      </div>
-      <Taskbar 
-        openApps={openApps} 
-        activeInstanceId={activeInstanceId}
-        onAppIconClick={toggleMinimize}
-        onAppLauncherClick={() => openApp(apps.find(app => app.id === 'launcher')!)}
-      />
-    </main>
+        <Taskbar 
+          openApps={openApps} 
+          activeInstanceId={activeInstanceId}
+          onAppIconClick={focusApp}
+          onAppLauncherClick={() => openApp(apps.find(app => app.id === 'launcher')!)}
+        />
+      </main>
+    </FileSystemProvider>
   );
 }
+
+    

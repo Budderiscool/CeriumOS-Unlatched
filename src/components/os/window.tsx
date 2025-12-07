@@ -24,9 +24,10 @@ interface WindowProps {
   onFocus: (instanceId: number) => void;
   onMinimize: (instanceId: number) => void;
   onPositionChange: (instanceId: number, newPosition: { x: number; y: number }) => void;
+  openApp: (app: AppDef) => void;
 }
 
-export default function Window({ appInstance, isActive, onClose, onFocus, onMinimize, onPositionChange }: WindowProps) {
+export default function Window({ appInstance, isActive, onClose, onFocus, onMinimize, onPositionChange, openApp }: WindowProps) {
   const { app, instanceId, zIndex, position } = appInstance;
   const isLauncher = app.id === 'launcher';
 
@@ -60,9 +61,9 @@ export default function Window({ appInstance, isActive, onClose, onFocus, onMini
     if (!isDraggingRef.current) return;
     e.preventDefault();
 
-    const newX = e.clientX - dragStartPosRef.current.x;
-    const newY = e.clientY - dragStartPosRef.current.y;
     if (nodeRef.current) {
+        const newX = e.clientX - dragStartPosRef.current.x;
+        const newY = e.clientY - dragStartPosRef.current.y;
         nodeRef.current.style.transform = `translate(${newX}px, ${newY}px)`;
     }
   };
@@ -120,7 +121,7 @@ export default function Window({ appInstance, isActive, onClose, onFocus, onMini
             )}
             <CardContent className="p-0 flex-grow relative overflow-hidden">
                 {isLauncher ? (
-                    <AppLauncher openApp={(app) => {onClose(instanceId); onFocus(app.id as any); }} close={() => onClose(instanceId)} />
+                    <AppLauncher openApp={(app) => { openApp(app); onClose(instanceId); }} close={() => onClose(instanceId)} />
                 ) : (
                     <AppContent />
                 )}
@@ -129,3 +130,5 @@ export default function Window({ appInstance, isActive, onClose, onFocus, onMini
     </div>
   );
 }
+
+    
