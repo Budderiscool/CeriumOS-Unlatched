@@ -85,8 +85,8 @@ export default function DesktopPage() {
   }, [openApps, isClient]);
 
   const openApp = useCallback((app: AppDef, input?: any) => {
-    const existingInstance = openApps.find(a => a.app.id === app.id);
-    if (app.singleInstance && existingInstance) {
+    const existingInstance = openApps.find(a => a.app.id === app.id && a.app.singleInstance);
+    if (existingInstance) {
         focusApp(existingInstance.instanceId);
         return;
     }
@@ -112,17 +112,21 @@ export default function DesktopPage() {
   }, [openApps, setOpenApps, setActiveInstanceId]);
 
   const closeApp = useCallback((instanceId: number) => {
-    setOpenApps(prev => prev.filter(a => a.instanceId !== instanceId));
-    if (activeInstanceId === instanceId) {
-       const remainingApps = openApps.filter(a => a.instanceId !== instanceId && !a.isMinimized);
-       if (remainingApps.length > 0) {
-         const topApp = remainingApps.sort((a,b) => b.zIndex - a.zIndex)[0];
-         setActiveInstanceId(topApp.instanceId);
-       } else {
-         setActiveInstanceId(null);
-       }
-    }
-  }, [activeInstanceId, openApps, setOpenApps, setActiveInstanceId]);
+    setOpenApps(prev => {
+        const newOpenApps = prev.filter(a => a.instanceId !== instanceId);
+        if (activeInstanceId === instanceId) {
+            const remainingApps = newOpenApps.filter(a => !a.isMinimized);
+            if (remainingApps.length > 0) {
+                const topApp = remainingApps.sort((a,b) => b.zIndex - a.zIndex)[0];
+                setActiveInstanceId(topApp.instanceId);
+            } else {
+                setActiveInstanceId(null);
+            }
+        }
+        return newOpenApps;
+    });
+  }, [activeInstanceId, setOpenApps, setActiveInstanceId]);
+
 
   const focusApp = useCallback((instanceId: number) => {
     const targetApp = openApps.find(a => a.instanceId === instanceId);
@@ -226,6 +230,7 @@ export default function DesktopPage() {
           openApps={openApps} 
           activeInstanceId={activeInstanceId}
           onAppIconClick={focusApp}
+          onCloseApp={closeApp}
           onAppLauncherClick={() => openApp(apps.find(app => app.id === 'launcher')!)}
         />
       </main>

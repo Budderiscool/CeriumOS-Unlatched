@@ -4,6 +4,11 @@
 import { useEffect, useState, useRef, KeyboardEvent } from "react";
 import { apps } from "@/lib/apps";
 import { cn } from "@/lib/utils";
+import type { AppDef } from "@/lib/types";
+
+interface TerminalAppProps {
+  openApp: (app: AppDef) => void;
+}
 
 const StaticLine = ({ children, className }: { children: React.ReactNode, className?: string }) => (
     <p className={cn("text-green-400", className)}>{children}</p>
@@ -68,7 +73,7 @@ const Neofetch = () => (
     </div>
 )
 
-export default function TerminalApp() {
+export default function TerminalApp({ openApp }: TerminalAppProps) {
     const [history, setHistory] = useState<React.ReactNode[]>([
         <StaticLine key="0">Welcome to CeriumOS Terminal</StaticLine>,
         <StaticLine key="1">Type 'help' for a list of commands.</StaticLine>,
@@ -79,9 +84,17 @@ export default function TerminalApp() {
         const newHistory: React.ReactNode[] = [...history, <div key={history.length}><span className="text-cyan-400">user@ceriumos:~$</span> {command}</div>];
         const [cmd, ...args] = command.toLowerCase().trim().split(' ');
 
+        const appToOpen = apps.find(app => app.id === cmd);
+        if (appToOpen) {
+            openApp(appToOpen);
+            newHistory.push(<StaticLine key={history.length + 1}>Opening {appToOpen.name}...</StaticLine>);
+            setHistory(newHistory);
+            return;
+        }
+
         switch (cmd) {
             case 'help':
-                newHistory.push(<StaticLine key={history.length + 1}>Commands: help, clear, date, about, neofetch, ls, echo, whoami, uname, ping, uptime, pwd, hostname, arch, free, exit, lorem</StaticLine>);
+                newHistory.push(<StaticLine key={history.length + 1}>Commands: help, clear, date, about, neofetch, ls, echo, whoami, uname, ping, uptime, pwd, hostname, arch, free, exit, lorem, sudo, touch, mkdir, cat, rm, mv, cp, ps, kill, df, top, man, history, reboot, shutdown. You can also type an app id (e.g. 'browser') to open it.</StaticLine>);
                 break;
             case 'clear':
                 setHistory([]);
@@ -96,7 +109,7 @@ export default function TerminalApp() {
                 newHistory.push(<Neofetch key={history.length + 1} />);
                 break;
             case 'ls':
-                 newHistory.push(<StaticLine key={history.length + 1} className="flex gap-4">{apps.filter(a => !a.isSystemApp).map(a => a.name.toLowerCase().replace(' ', '_')).join('   ')}</StaticLine>);
+                 newHistory.push(<StaticLine key={history.length + 1} className="flex gap-4">{apps.filter(a => !a.isSystemApp).map(a => a.id).join('   ')}</StaticLine>);
                 break;
             case 'echo':
                 newHistory.push(<StaticLine key={history.length + 1}>{args.join(' ')}</StaticLine>);
@@ -143,6 +156,39 @@ export default function TerminalApp() {
             case 'cat':
                 newHistory.push(<StaticLine key={history.length + 1}>Displaying content of {args[0] || 'file.txt'}: ...</StaticLine>);
                 break;
+            case 'rm':
+                newHistory.push(<StaticLine key={history.length + 1}>rm: permission denied for {args[0] || 'file.txt'}</StaticLine>);
+                break;
+            case 'mv':
+                 newHistory.push(<StaticLine key={history.length + 1}>Moving {args[0] || 'file1'} to {args[1] || 'file2'}</StaticLine>);
+                break;
+            case 'cp':
+                newHistory.push(<StaticLine key={history.length + 1}>Copying {args[0] || 'file1'} to {args[1] || 'file2'}</StaticLine>);
+                break;
+            case 'ps':
+                newHistory.push(<StaticLine key={history.length + 1}>PID TTY TIME CMD<br />1 ? 00:00:01 systemd<br />42 ? 00:00:05 browser<br />101 ? 00:00:02 terminal</StaticLine>);
+                break;
+            case 'kill':
+                newHistory.push(<StaticLine key={history.length + 1}>Cannot kill process {args[0] || '42'}.</StaticLine>);
+                break;
+            case 'df':
+                newHistory.push(<StaticLine key={history.length + 1}>Filesystem 1K-blocks Used Available Use% Mounted on<br />tmpfs 819200 204800 614400 25% /</StaticLine>);
+                break;
+            case 'top':
+                newHistory.push(<StaticLine key={history.length + 1}>Displaying top processes...</StaticLine>);
+                break;
+            case 'man':
+                 newHistory.push(<StaticLine key={history.length + 1}>No manual entry for {args[0] || 'command'}</StaticLine>);
+                break;
+            case 'history':
+                newHistory.push(<StaticLine key={history.length + 1}>{history.filter(h => typeof h === 'object' && h?.props?.children[1]).map((h, i) => `${i+1} ${h.props.children[1]}`).join('<br/>')}</StaticLine>);
+                break;
+            case 'reboot':
+                 newHistory.push(<StaticLine key={history.length + 1}>Rebooting is not permitted.</StaticLine>);
+                break;
+            case 'shutdown':
+                newHistory.push(<StaticLine key={history.length + 1}>Shutdown is not permitted.</StaticLine>);
+                break;
             default:
                 if (command.trim() !== '') {
                    newHistory.push(<StaticLine key={history.length + 1}>Command not found: {command}</StaticLine>);
@@ -158,7 +204,18 @@ export default function TerminalApp() {
     
     return (
         <div className="w-full h-full bg-black text-sm font-mono p-4 overflow-y-auto" onClick={() => endOfHistoryRef.current?.querySelector('input')?.focus()}>
-            {history}
+            {history.map((line, index) => {
+                if (typeof line === 'string') {
+                    return <StaticLine key={index}><span dangerouslySetInnerHTML={{ __html: line }} /></StaticLine>;
+                }
+                 if (React.isValidElement(line) && line.props.children?.props?.dangerouslySetInnerHTML) {
+                    return React.cloneElement(line as React.ReactElement, { key: index });
+                }
+                 if (React.isValidElement(line) && typeof line.props.children === 'string' && line.props.children.includes('<br />')) {
+                    return <StaticLine key={index}><span dangerouslySetInnerHTML={{ __html: line.props.children }} /></StaticLine>;
+                }
+                return React.isValidElement(line) ? React.cloneElement(line, { key: index }) : null;
+            })}
             <Prompt onSubmit={handleCommand} />
             <div ref={endOfHistoryRef} />
         </div>

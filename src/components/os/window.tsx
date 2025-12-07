@@ -9,6 +9,12 @@ import { AppDef } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import AppLauncher from './app-launcher';
 import { apps as appDefs } from '@/lib/apps';
+import TerminalApp from '../apps/terminal';
+import Notepad from '../apps/notepad';
+import Browser from '../apps/browser';
+import CalculatorApp from '../apps/calculator';
+import FileManager from '../apps/file-manager';
+import SettingsApp from '../apps/settings';
 
 interface AppInstance {
   app: AppDef;
@@ -27,14 +33,24 @@ interface WindowProps {
   openApp: (app: AppDef) => void;
 }
 
+const appComponentMap: { [key: string]: React.ComponentType<any> } = {
+    browser: Browser,
+    terminal: TerminalApp,
+    settings: SettingsApp,
+    calculator: CalculatorApp,
+    files: FileManager,
+    notepad: Notepad,
+    launcher: AppLauncher,
+};
+
+
 export default function Window({ appInstance, isActive, onClose, onFocus, onMinimize, onPositionChange, openApp }: WindowProps) {
   const { app, instanceId, zIndex, position } = appInstance;
   const isLauncher = app.id === 'launcher';
 
-  // Find the original app definition to get the component, not from the persisted state
   const originalAppDef = appDefs.find(a => a.id === app.id);
   const Icon = originalAppDef ? originalAppDef.icon : () => null;
-  const AppContent = originalAppDef ? originalAppDef.component : () => null;
+  const AppContent = originalAppDef ? appComponentMap[originalAppDef.id] : () => null;
 
   const nodeRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
@@ -98,6 +114,14 @@ export default function Window({ appInstance, isActive, onClose, onFocus, onMini
 
     onPositionChange(instanceId, { x: newX, y: newY });
   };
+  
+  const contentProps: any = {};
+    if (app.id === 'terminal') {
+        contentProps.openApp = openApp;
+    } else if (isLauncher) {
+        contentProps.openApp = (appToOpen: AppDef) => { openApp(appToOpen); onClose(instanceId); };
+        contentProps.close = () => onClose(instanceId);
+    }
 
   return (
     <div
@@ -115,7 +139,7 @@ export default function Window({ appInstance, isActive, onClose, onFocus, onMini
         onMouseDownCapture={() => onFocus(instanceId)}
     >
         <Card className={cn(
-            "w-full h-full flex flex-col shadow-2xl transition-all duration-100",
+            "w-full h-full flex flex-col shadow-2xl transition-all duration-100 resize-both overflow-auto",
             isActive ? 'shadow-primary/30 border-primary/50' : 'shadow-black/20',
             isLauncher ? 'bg-background/80 backdrop-blur-md border-0 rounded-none' : 'bg-secondary/80 backdrop-blur-md'
         )}>
@@ -140,11 +164,7 @@ export default function Window({ appInstance, isActive, onClose, onFocus, onMini
                 </CardHeader>
             )}
             <CardContent className="p-0 flex-grow relative overflow-hidden">
-                {isLauncher ? (
-                    <AppLauncher openApp={(app) => { openApp(app); onClose(instanceId); }} close={() => onClose(instanceId)} />
-                ) : (
-                    <AppContent />
-                )}
+                 {AppContent && <AppContent {...contentProps} />}
             </CardContent>
         </Card>
     </div>
