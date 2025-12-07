@@ -1,9 +1,11 @@
+
 "use client";
 
 import { useEffect, useState, useRef, KeyboardEvent } from "react";
+import { apps } from "@/lib/apps";
 
-const StaticLine = ({ children }: { children: React.ReactNode }) => (
-    <p className="text-green-400">{children}</p>
+const StaticLine = ({ children, className }: { children: React.ReactNode, className?: string }) => (
+    <p className={cn("text-green-400", className)}>{children}</p>
 );
 
 const Prompt = ({ onSubmit }: { onSubmit: (command: string) => void }) => {
@@ -32,10 +34,38 @@ const Prompt = ({ onSubmit }: { onSubmit: (command: string) => void }) => {
                 onKeyDown={handleKeyDown}
                 className="bg-transparent border-none text-green-400 focus:outline-none flex-1 ml-2"
                 autoFocus
+                autoComplete="off"
+                autoCapitalize="off"
+                autoCorrect="off"
             />
         </div>
     );
 }
+
+const Neofetch = () => (
+    <div className="flex gap-4">
+        <pre className="text-primary">
+{`
+   .---.
+  /  .  \\
+  |  :  |
+  \\  '  /
+   '---'
+`}
+        </pre>
+        <div className="text-green-400">
+            <p><span className="text-cyan-400">user</span>@<span className="text-cyan-400">ceriumos</span></p>
+            <p>-------------</p>
+            <p><span className="text-cyan-400">OS:</span> CeriumOS v1.0</p>
+            <p><span className="text-cyan-400">Kernel:</span> Next.js</p>
+            <p><span className="text-cyan-400">Uptime:</span> a few moments</p>
+            <p><span className="text-cyan-400">Shell:</span> bash</p>
+            <p><span className="text-cyan-400">Resolution:</span> your screen</p>
+            <p><span className="text-cyan-400">DE:</span> CeriumDE</p>
+            <p><span className="text-cyan-400">Terminal:</span> Cerium Terminal</p>
+        </div>
+    </div>
+)
 
 export default function TerminalApp() {
     const [history, setHistory] = useState<React.ReactNode[]>([
@@ -45,11 +75,12 @@ export default function TerminalApp() {
     const endOfHistoryRef = useRef<HTMLDivElement>(null);
 
     const handleCommand = (command: string) => {
-        const newHistory = [...history, <div key={history.length}><span className="text-cyan-400">user@ceriumos:~$</span> {command}</div>];
-        
-        switch (command.toLowerCase().trim()) {
+        const newHistory: React.ReactNode[] = [...history, <div key={history.length}><span className="text-cyan-400">user@ceriumos:~$</span> {command}</div>];
+        const [cmd, ...args] = command.toLowerCase().trim().split(' ');
+
+        switch (cmd) {
             case 'help':
-                newHistory.push(<StaticLine key={history.length + 1}>Commands: help, clear, date, about</StaticLine>);
+                newHistory.push(<StaticLine key={history.length + 1}>Commands: help, clear, date, about, neofetch, ls, echo</StaticLine>);
                 break;
             case 'clear':
                 setHistory([]);
@@ -59,6 +90,15 @@ export default function TerminalApp() {
                 break;
             case 'about':
                 newHistory.push(<StaticLine key={history.length + 1}>CeriumOS v1.0 - Minimalist Desktop Environment</StaticLine>);
+                break;
+            case 'neofetch':
+                newHistory.push(<Neofetch key={history.length + 1} />);
+                break;
+            case 'ls':
+                 newHistory.push(<StaticLine key={history.length + 1} className="flex gap-4">{apps.filter(a => !a.isSystemApp).map(a => a.name.toLowerCase().replace(' ', '_')).join('   ')}</StaticLine>);
+                break;
+            case 'echo':
+                newHistory.push(<StaticLine key={history.length + 1}>{args.join(' ')}</StaticLine>);
                 break;
             default:
                 if (command.trim() !== '') {
@@ -70,7 +110,7 @@ export default function TerminalApp() {
     };
 
     useEffect(() => {
-        endOfHistoryRef.current?.scrollIntoView({ behavior: "smooth" });
+        endOfHistoryRef.current?.scrollIntoView({ behavior: "auto" });
     }, [history]);
     
     return (

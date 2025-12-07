@@ -2,12 +2,14 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Bell, Brush, HardDrive, UserCircle, Palette, Moon, Sun } from "lucide-react";
+import { Bell, Brush, HardDrive, UserCircle, Palette, Moon, Sun, Wifi, Volume2 } from "lucide-react";
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import { Slider } from '../ui/slider';
+import { Progress } from '../ui/progress';
 
 const settingsCategories = [
   { id: "appearance", name: "Appearance", icon: Brush },
@@ -22,27 +24,36 @@ const themes = [
     { name: 'Sky', primary: '190 70% 60%' },
     { name: 'Sunset', primary: '25 80% 60%' },
     { name: 'Rose', primary: '340 80% 70%' },
-]
+];
 
 function AppearanceSettings() {
     const [darkMode, setDarkMode] = useState(true);
     const [activeTheme, setActiveTheme] = useState('207 82% 67%');
 
     useEffect(() => {
-        const isDark = document.documentElement.classList.contains('dark');
-        setDarkMode(isDark);
+        const storedDarkMode = localStorage.getItem('darkMode');
+        const storedTheme = localStorage.getItem('activeTheme');
 
-        const currentPrimary = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim();
-        setActiveTheme(currentPrimary);
+        const isDark = storedDarkMode ? JSON.parse(storedDarkMode) : true;
+        const theme = storedTheme || '207 82% 67%';
+
+        setDarkMode(isDark);
+        setActiveTheme(theme);
+
+        document.documentElement.classList.toggle('dark', isDark);
+        document.documentElement.style.setProperty('--primary', theme);
+        document.documentElement.style.setProperty('--ring', theme);
     }, []);
 
     const handleThemeChange = (isDark: boolean) => {
         setDarkMode(isDark);
+        localStorage.setItem('darkMode', JSON.stringify(isDark));
         document.documentElement.classList.toggle('dark', isDark);
     };
 
     const handleColorChange = (hslColor: string) => {
         setActiveTheme(hslColor);
+        localStorage.setItem('activeTheme', hslColor);
         document.documentElement.style.setProperty('--primary', hslColor);
         document.documentElement.style.setProperty('--ring', hslColor);
     };
@@ -93,19 +104,59 @@ function AppearanceSettings() {
     );
 }
 
+function StorageSettings() {
+    const [storageUsed, setStorageUsed] = useState(0);
+
+    useEffect(() => {
+        let totalBytes = 0;
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key) {
+                const value = localStorage.getItem(key);
+                if (value) {
+                    totalBytes += new Blob([value]).size;
+                }
+            }
+        }
+        setStorageUsed(totalBytes);
+    }, []);
+
+    const totalStorage = 5 * 1024 * 1024; // 5MB
+    const percentageUsed = (storageUsed / totalStorage) * 100;
+    const usedMB = (storageUsed / 1024 / 1024).toFixed(2);
+
+    return (
+        <div>
+            <h3 className="text-2xl font-bold mb-2">Storage</h3>
+            <p className="text-muted-foreground mb-8">
+                Manage local storage used by CeriumOS.
+            </p>
+            <Card className="p-6">
+                <CardTitle className="text-lg">Local Storage Usage</CardTitle>
+                <div className="my-4">
+                    <Progress value={percentageUsed} />
+                </div>
+                <p className="text-sm text-muted-foreground text-center">
+                    {usedMB} MB of 5 MB used
+                </p>
+            </Card>
+        </div>
+    );
+}
+
 
 function PlaceholderSettings({ title }: { title: string }) {
     return (
         <div>
             <h3 className="text-2xl font-bold mb-2">{title}</h3>
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground mb-8">
                 Settings for {title.toLowerCase()} will be available here.
             </p>
-            <div className="mt-8 p-6 border rounded-lg">
+            <Card className="p-6">
                 <p className="text-center text-muted-foreground">
                     Coming soon.
                 </p>
-            </div>
+            </Card>
         </div>
     );
 }
@@ -117,10 +168,10 @@ export default function SettingsApp() {
         switch(activeCategory) {
             case 'appearance':
                 return <AppearanceSettings />;
+            case 'storage':
+                return <StorageSettings />;
             case 'notifications':
                 return <PlaceholderSettings title="Notifications" />;
-            case 'storage':
-                return <PlaceholderSettings title="Storage" />;
             case 'account':
                 return <PlaceholderSettings title="Account" />;
             default:
@@ -139,7 +190,7 @@ export default function SettingsApp() {
                             <button 
                                 className={cn(
                                     "w-full flex items-center gap-3 p-2 rounded-lg text-left",
-                                    activeCategory === category.id ? "bg-primary/20 text-primary-foreground" : "hover:bg-accent"
+                                    activeCategory === category.id ? "bg-primary/20 text-foreground" : "hover:bg-accent/80"
                                 )}
                                 onClick={() => setActiveCategory(category.id)}
                             >

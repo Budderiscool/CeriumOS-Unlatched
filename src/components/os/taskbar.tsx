@@ -1,3 +1,4 @@
+
 "use client";
 
 import { LayoutGrid } from 'lucide-react';
@@ -44,16 +45,16 @@ export default function Taskbar({ openApps, activeInstanceId, onAppIconClick, on
                     variant="ghost"
                     size="icon"
                     className={`relative h-10 w-10 transition-colors duration-200 ${
-                      instance.instanceId === activeInstanceId ? 'bg-accent' : ''
+                      instance.instanceId === activeInstanceId && !instance.isMinimized ? 'bg-accent' : ''
                     }`}
                     onClick={() => onAppIconClick(instance.instanceId)}
                   >
                     <instance.app.icon className="h-6 w-6" />
-                    {!instance.isMinimized && instance.instanceId === activeInstanceId && (
+                    {instance.instanceId === activeInstanceId && !instance.isMinimized && (
                        <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-1 bg-primary rounded-t-full"></span>
                     )}
-                    {instance.isMinimized && (
-                      <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-muted-foreground rounded-full"></span>
+                     {instance.isMinimized && (
+                      <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-4 h-1 border-b-2 border-primary"></span>
                     )}
                   </Button>
                 </TooltipTrigger>
