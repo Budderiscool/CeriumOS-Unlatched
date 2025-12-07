@@ -140,14 +140,14 @@ export default function Browser() {
     <div className="w-full h-full flex flex-col bg-background text-foreground">
       <div className="bg-secondary/30 border-b flex-shrink-0">
         {/* Tab Bar */}
-        <div className="flex items-end h-10">
+        <div className="flex items-end h-10 pt-1.5 px-1.5">
           <div className="flex-grow flex items-end h-full overflow-x-auto">
             {tabs.map(tab => (
               <div key={tab.id}
                 onClick={() => setActiveTabId(tab.id)}
                 className={cn(
-                  "flex items-center h-full max-w-[200px] px-3 gap-2 border-r relative group cursor-pointer",
-                  activeTabId === tab.id ? "bg-background" : "bg-secondary/50 hover:bg-secondary/70"
+                  "flex items-center h-full max-w-[200px] px-3 gap-2 border-r relative group cursor-pointer rounded-t-md",
+                  activeTabId === tab.id ? "bg-background border-b-transparent" : "bg-secondary/50 hover:bg-secondary/70 border-transparent"
                 )}>
                   {tab.url !== BLANK_PAGE && (
                     <img src={getFaviconUrl(tab.url)} alt="" className="w-4 h-4 flex-shrink-0"/>
@@ -159,13 +159,13 @@ export default function Browser() {
               </div>
             ))}
           </div>
-          <Button variant="ghost" size="icon" className="h-10 w-10 rounded-none border-l" onClick={addNewTab}>
+          <Button variant="ghost" size="icon" className="h-10 w-10 rounded-t-md border-l" onClick={addNewTab}>
             <Plus className="h-4 w-4" />
           </Button>
         </div>
 
         {/* Address Bar */}
-        <div className="p-1.5 flex items-center gap-1.5">
+        <div className="p-1.5 flex items-center gap-1.5 bg-background">
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={goBack} disabled={!activeTab || activeTab.historyIndex <= 0}><ArrowLeft className="h-4 w-4" /></Button>
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={goForward} disabled={!activeTab || activeTab.historyIndex >= activeTab.history.length - 1}><ArrowRight className="h-4 w-4" /></Button>
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={refreshIframe}><RotateCw className="h-4 w-4" /></Button>
@@ -176,7 +176,7 @@ export default function Browser() {
               value={activeTab?.inputValue || ''}
               onChange={handleInputChange}
               placeholder="Search Google or enter an address"
-              className="h-8"
+              className="h-8 bg-secondary/50"
             />
           </form>
           
