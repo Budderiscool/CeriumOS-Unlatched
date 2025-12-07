@@ -1,0 +1,10 @@
+import type { LucideIcon } from 'lucide-react';
+import type { ComponentType } from 'react';
+
+export interface AppDef {
+  id: string;
+  name: string;
+  icon: LucideIcon;
+  component: ComponentType<any>;
+  isSystemApp?: boolean;
+}
